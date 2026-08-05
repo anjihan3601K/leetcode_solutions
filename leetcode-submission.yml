@@ -1,0 +1,35 @@
+name: LeetCode Submission Sync
+
+on:
+  repository_dispatch:
+    types: [leetcode_submission]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Handle submission
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          PAYLOAD: ${{ toJson(github.event.client_payload) }}
+        run: python scripts/handle_submission.py
+
+      - name: Commit and push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "sync: ${{ github.event.client_payload.title }} (${{ github.event.client_payload.difficulty }})"
+          file_pattern: "problems/** README.md"
